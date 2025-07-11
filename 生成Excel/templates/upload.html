@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF - 8">
+    <title>上传PDF文件</title>
+    <style>
+        #progress-bar-01,
+        #progress-bar-02 {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        #progress-01,
+        #progress-02 {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>上传PDF文件</h1>
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+        <label for="file">选择PDF文件:</label>
+        <input type="file" name="file" id="file" required><br>
+        <label for="start_page">开始处理的页码:</label>
+        <input type="number" name="start_page" id="start_page" required><br>
+        <label for="page_interval">每张表是几页:</label>
+        <input type="number" name="page_interval" id="page_interval" value="1" required><br>
+        <input type="submit" value="上传并处理">
+    </form>
+    <div>
+        <h2>new_ben_01.xlsx 进度</h2>
+        <div id="progress-bar-01">
+            <div id="progress-01">0%</div>
+        </div>
+        <div id="status-01">Waiting for upload</div>
+    </div>
+    <div>
+        <h2>new_ben_02.xlsx 进度</h2>
+        <div id="progress-bar-02">
+            <div id="progress-02">0%</div>
+        </div>
+        <div id="status-02">Waiting for upload</div>
+    </div>
+    <script>
+        const form = document.getElementById('upload-form');
+        const progressBar01 = document.getElementById('progress-01');
+        const statusDiv01 = document.getElementById('status-01');
+        const progressBar02 = document.getElementById('progress-02');
+        const statusDiv02 = document.getElementById('status-02');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        document.open();
+                        document.write(xhr.responseText);
+                        document.close();
+                    }
+                }
+            };
+            xhr.send(new FormData(form));
+
+            const intervalId = setInterval(function () {
+                const progressXhr01 = new XMLHttpRequest();
+                progressXhr01.open('GET', '/progress_01', true);
+                progressXhr01.onreadystatechange = function () {
+                    if (progressXhr01.readyState === 4 && progressXhr01.status === 200) {
+                        const data = JSON.parse(progressXhr01.responseText);
+                        const percentage = (data.step / data.total_steps) * 100;
+                        progressBar01.style.width = percentage + '%';
+                        progressBar01.textContent = percentage.toFixed(2) + '%';
+                        statusDiv01.textContent = data.status;
+                    }
+                };
+                progressXhr01.send();
+
+                const progressXhr02 = new XMLHttpRequest();
+                progressXhr02.open('GET', '/progress_02', true);
+                progressXhr02.onreadystatechange = function () {
+                    if (progressXhr02.readyState === 4 && progressXhr02.status === 200) {
+                        const data = JSON.parse(progressXhr02.responseText);
+                        const percentage = (data.step / data.total_steps) * 100;
+                        progressBar02.style.width = percentage + '%';
+                        progressBar02.textContent = percentage.toFixed(2) + '%';
+                        statusDiv02.textContent = data.status;
+                    }
+                };
+                progressXhr02.send();
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>

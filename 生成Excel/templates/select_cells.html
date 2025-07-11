@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF - 8">
+    <title>选择单元格</title>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+
+        input[type="checkbox"] {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>选择单元格</h1>
+    <form method="post" action="/generate_02" id="select-form">
+        <h2>选择 selected_cells</h2>
+        <table id="selected-cells-table">
+            <!-- 表格内容将通过 JavaScript 动态生成 -->
+        </table>
+        <h2>选择 data_cells</h2>
+        <table id="data-cells-table">
+            <!-- 表格内容将通过 JavaScript 动态生成 -->
+        </table>
+        <input type="button" value="预览" onclick="previewCells()">
+        <input type="submit" value="下一步：生成 new_ben_02.xlsx" onclick="return confirmSelection()">
+    </form>
+    <script>
+        const excelPath = "{{ excel_path }}";
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `/get_excel_data?path=${excelPath}`, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                const selectedTable = document.getElementById('selected-cells-table');
+                const dataTable = document.getElementById('data-cells-table');
+
+                function createTable(table, name) {
+                    for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+                        const row = table.insertRow();
+                        for (let colIndex = 0; colIndex < data[rowIndex].length; colIndex++) {
+                            const cell = row.insertCell();
+                            const cellAddress = String.fromCharCode(65 + colIndex) + (rowIndex + 1);
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.name = name;
+                            checkbox.value = cellAddress;
+                            cell.appendChild(checkbox);
+                            const cellValue = data[rowIndex][colIndex] === null? '' : data[rowIndex][colIndex];
+                            cell.appendChild(document.createTextNode(cellValue));
+                        }
+                    }
+                }
+
+                createTable(selectedTable, 'selected_cells');
+                createTable(dataTable, 'data_cells');
+            }
+        };
+        xhr.send();
+
+        function previewCells() {
+            const selectedCells = [];
+            const dataCells = [];
+            const selectedCheckboxes = document.querySelectorAll('input[name="selected_cells"]:checked');
+            const dataCheckboxes = document.querySelectorAll('input[name="data_cells"]:checked');
+
+            selectedCheckboxes.forEach(checkbox => {
+                selectedCells.push(checkbox.value);
+            });
+
+            dataCheckboxes.forEach(checkbox => {
+                dataCells.push(checkbox.value);
+            });
+
+            alert(`Selected cells count: ${selectedCells.length}, data: ${selectedCells.join(', ')}\n\nData cells count: ${dataCells.length}, data: ${dataCells.join(', ')}`);
+        }
+
+        function confirmSelection() {
+            const selectedCells = [];
+            const dataCells = [];
+            const selectedCheckboxes = document.querySelectorAll('input[name="selected_cells"]:checked');
+            const dataCheckboxes = document.querySelectorAll('input[name="data_cells"]:checked');
+
+            selectedCheckboxes.forEach(checkbox => {
+                selectedCells.push(checkbox.value);
+            });
+
+            dataCheckboxes.forEach(checkbox => {
+                dataCells.push(checkbox.value);
+            });
+
+            const confirmationMessage = `Selected cells count: ${selectedCells.length}, data: ${selectedCells.join(', ')}\n\nData cells count: ${dataCells.length}, data: ${dataCells.join(', ')}\n\n确认要生成 new_ben_02.xlsx 吗？`;
+            return confirm(confirmationMessage);
+        }
+    </script>
+</body>
+
+</html>
